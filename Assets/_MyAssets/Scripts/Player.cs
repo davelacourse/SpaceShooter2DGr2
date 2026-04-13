@@ -6,6 +6,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float _playerSpeed = 10f;
     public float PlayerSpeed { get => _playerSpeed; set => _playerSpeed = value;}
     [SerializeField] private float _moveMaxHeight = 0f;
+    [SerializeField] private int _playerLives = 3;
 
     [Header("Propriétes Attaque(laser)")]
     [SerializeField] private GameObject _laserPrefab;
@@ -21,6 +22,8 @@ public class Player : MonoBehaviour
 
     private void Start()
     {
+        GameManager.Instance.OnEnemyDestroyed += Instance_OnEnemyDestroyed;
+        
         // Liaision avec les input actions
         _inputSystemActions = new InputSystem_Actions();
         _inputSystemActions.Player.Enable();
@@ -59,6 +62,9 @@ public class Player : MonoBehaviour
     {
         // _inputSystemActions.Player.Attack.performed -= Attack_performed;
         _inputSystemActions.Player.Disable();
+        GameManager.Instance.OnEnemyDestroyed -= Instance_OnEnemyDestroyed;
+        _inputSystemActions.Player.Attack.started -= _ => _isFiring = true;
+        _inputSystemActions.Player.Attack.canceled -= _ => _isFiring = false;
     }
 
     private void Update()
@@ -70,6 +76,21 @@ public class Player : MonoBehaviour
             // Faire apparaitre un laser / Lancer attaque du joueur
             Instantiate(_laserPrefab, transform.position + new Vector3(0f, 0.7f, 0f), Quaternion.identity);
             _canFire = Time.time + _fireRate;
+        }
+    }
+
+    private void Instance_OnEnemyDestroyed(object sender, GameManager.OnEnemyDestroyedEventArgs e)
+    {
+        if(e.DestroyedGameObjectTag == "Player")
+        {
+            _playerLives--;
+            if(_playerLives <= 0)
+            {
+                Destroy(gameObject);
+                Debug.Log("Fin de partie !!!");
+                SpawnManager spawnManager = FindAnyObjectByType<SpawnManager>();
+                spawnManager.EndSpawning();
+            }
         }
     }
 
