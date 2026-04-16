@@ -7,6 +7,7 @@ public class Player : MonoBehaviour
     public float PlayerSpeed { get => _playerSpeed; set => _playerSpeed = value;}
     [SerializeField] private float _moveMaxHeight = 0f;
     [SerializeField] private int _playerLives = 3;
+    public int PlayerLives => _playerLives;
 
     [Header("Propriétes Attaque(laser)")]
     [SerializeField] private GameObject _laserPrefab;
@@ -20,9 +21,16 @@ public class Player : MonoBehaviour
 
     private bool _isFiring = false;
 
-    private void Start()
+    private Animator _anim;
+
+    private void Awake()
     {
         GameManager.Instance.OnEnemyDestroyed += Instance_OnEnemyDestroyed;
+    }
+
+    private void Start()
+    {
+        _anim = GetComponent<Animator>();
         
         // Liaision avec les input actions
         _inputSystemActions = new InputSystem_Actions();
@@ -87,9 +95,9 @@ public class Player : MonoBehaviour
             if(_playerLives <= 0)
             {
                 Destroy(gameObject);
-                Debug.Log("Fin de partie !!!");
                 SpawnManager spawnManager = FindAnyObjectByType<SpawnManager>();
                 spawnManager.EndSpawning();
+                GameManager.Instance.EndGame();
             }
         }
     }
@@ -100,6 +108,22 @@ public class Player : MonoBehaviour
         direction2D.Normalize();
         transform.Translate(direction2D * Time.deltaTime * _playerSpeed);
 
+        if(direction2D.x < 0f)
+        {
+            _anim.SetBool("TurnLeft", true);
+            _anim.SetBool("TurnRight", false);
+        }
+        else if(direction2D.x > 0f)
+        {
+            _anim.SetBool("TurnLeft", false);
+            _anim.SetBool("TurnRight", true);
+        }
+        else
+        {
+            _anim.SetBool("TurnLeft", false);
+            _anim.SetBool("TurnRight", false);
+        }
+        
         float clampedX = Mathf.Clamp(transform.position.x, _minX, _maxX);
         float clampedY = Mathf.Clamp(transform.position.y, _minY, _maxY);
 

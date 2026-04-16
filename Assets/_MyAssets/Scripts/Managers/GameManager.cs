@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -12,6 +13,7 @@ public class GameManager : MonoBehaviour
     }
 
     private int _playerScore;
+    public int PlayerScore => _playerScore;
 
 
     private void Awake()
@@ -27,17 +29,43 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        PlayerPrefs.SetInt("PlayerScore", 0);
+    }
+
     public void EnemyDestroyed(int p_points, string p_gameObjectTag)
     {
         if(p_gameObjectTag == "Laser")
         {
             _playerScore += p_points;
-            Debug.Log($"Pointage: {_playerScore}");
         }
         
         OnEnemyDestroyed?.Invoke(this, new OnEnemyDestroyedEventArgs
         {
             DestroyedGameObjectTag = p_gameObjectTag
         });
+    }
+
+    public void EndGame()
+    {
+        PlayerPrefs.SetInt("PlayerScore", _playerScore);
+
+        if (PlayerPrefs.HasKey("PlayerHighScore"))
+        {
+            int highScore = PlayerPrefs.GetInt("PlayerHighScore", 0);
+            if (_playerScore > highScore) 
+            {
+                PlayerPrefs.SetInt("PlayerHighScore", _playerScore);
+            }
+        }
+        else
+        {
+            PlayerPrefs.SetInt("PlayerHighScore", _playerScore);
+        }
+
+        PlayerPrefs.Save();
+
+        SceneManager.LoadScene("End");
     }
 }
